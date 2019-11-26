@@ -333,14 +333,14 @@ TEST_CASE( "expert_shooter_accuracy", "[ranged] [balance]" )
     }
 }
 
-static void range_test( const Threshold &test_threshold, bool write_data = false )
+static std::vector<int> range_test( const Threshold &test_threshold )
 {
     std::vector <int> data;
     // Start at an absurdly high dispersion and count down.
     int prev_dispersion = 6000;
     for( int r = 1; r <= 60; ++r ) {
         int found_dispersion = -1;
-        // We carry forward prev_dispersion because we never expet the next tier of range to hit the target accuracy level with a lower dispersion.
+        // We carry forward prev_dispersion because we never expect the next tier of range to hit the target accuracy level with a lower dispersion.
         for( int d = prev_dispersion; d >= 0; --d ) {
             firing_statistics stats = firing_test( dispersion_sources( d ), r, test_threshold );
             // Switch this from INFO to WARN to debug the scanning process itself.
@@ -362,16 +362,25 @@ static void range_test( const Threshold &test_threshold, bool write_data = false
             data.push_back( found_dispersion );
         }
     }
-    if( write_data ) {
-        const bool similar_to_previous_test_results =
-            std::equal( data.begin(), data.end(),
-                        Creature::dispersion_for_even_chance_of_good_hit.begin(),
-                        Creature::dispersion_for_even_chance_of_good_hit.end(),
-        []( const int a, const int b ) -> bool {
-            return a > 0 && b > 0 && std::abs( static_cast<float>( a - b ) / b ) < 0.15;
-        } );
+}
 
-        if( !similar_to_previous_test_results ) {
+static void range_test( const Threshold &test_threshold, bool write_data )
+{
+    std::vector <int> data;
+    
+    data = range_test( test_threshold );
+
+    const bool similar_to_previous_test_results =
+        std::equal( data.begin(), data.end(),
+                    Creature::dispersion_for_even_chance_of_good_hit.begin(),
+                    Creature::dispersion_for_even_chance_of_good_hit.end(),
+                    []( const int a, const int b ) -> bool {
+        return a > 0 && b > 0 && std::abs( static_cast<float>( a - b ) / b ) < 0.15;
+    } );
+    if( write_data )
+    {
+        if( !similar_to_previous_test_results )
+        {
             write_to_file( "./data/json/hit_range.json", [&]( std::ostream & fsa ) {
                 JsonOut j_out( fsa );
                 j_out.start_array();
@@ -381,11 +390,17 @@ static void range_test( const Threshold &test_threshold, bool write_data = false
                 j_out.end_object();
                 j_out.end_array();
             }, _( "hit_range file" ) );
-        } else {
+        }
+        else
+        {
             WARN( "Didn't write.  Data too similar to previous test results." );
         }
-        REQUIRE( similar_to_previous_test_results );
     }
+    else if( !similar_to_previous_test_results )
+    {
+        WARN( "The data is not similar enough to the previous test results." );
+    }
+    REQUIRE( similar_to_previous_test_results );
 }
 
 // I added this to find inflection points where accuracy at a particular range crosses a threshold.
