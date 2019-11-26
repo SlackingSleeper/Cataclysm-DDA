@@ -402,3 +402,18 @@ TEST_CASE( "synthetic_range_test", "[.]" )
         range_test( Threshold( accuracy_goodhit, 0.5 ), true );
     }
 }
+TEST_CASE( "synthetic_range_test_no_write", "[.]" )
+{
+    SECTION( "quickdraw thresholds" )
+    {
+        range_test( Threshold( accuracy_grazing, 0.1 ) );
+    }
+    SECTION( "max range thresholds" )
+    {
+        range_test( Threshold( accuracy_goodhit, 0.1 ) );
+    }
+    SECTION( "good hit thresholds" )
+    {
+        range_test( Threshold( accuracy_goodhit, 0.5 ), false );
+    }
+}
